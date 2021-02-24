@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Map Application</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="select_file_text">Select file</string>
+    <string name="implementation_1_text">Implementation 1</string>
+    <string name="implementation_2_text">Implementation 2</string>
+    <string name="statistics_text">Statistics</string>
+    <string name="abilities_text">Abilities</string>
+    <string name="moves_text">Moves</string>
+    <string name="weakness_text">Weakness</string>
+    <string name="descriptor_text">descriptor</string>
+    <string name="set_limit_text">Limit</string>
+    <string name="limit_text">Limit</string>
+    <string name="weight_text">Weight: %s</string>
+    <string name="height_text">Height: %s</string>
+</resources>

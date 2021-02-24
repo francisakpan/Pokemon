@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "135245417769",
+    "firebase_url": "https://map-application-week-8-default-rtdb.firebaseio.com",
+    "project_id": "map-application-week-8",
+    "storage_bucket": "map-application-week-8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:135245417769:android:827f762397fea6d3983b38",
+        "android_client_info": {
+          "package_name": "com.francis.mapapplication"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "135245417769-i8qfm6qmj949fqmjl1k6vtlh3b536dsf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKZz7SVI0DGziZE6Gj7N5w2VHgXyrUIbc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "135245417769-i8qfm6qmj949fqmjl1k6vtlh3b536dsf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:135245417769:android:8001a9415924ff4a983b38",
+        "android_client_info": {
+          "package_name": "com.jesse.tracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "135245417769-i8qfm6qmj949fqmjl1k6vtlh3b536dsf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKZz7SVI0DGziZE6Gj7N5w2VHgXyrUIbc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "135245417769-i8qfm6qmj949fqmjl1k6vtlh3b536dsf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
