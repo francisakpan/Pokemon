@@ -1,33 +1,29 @@
 package com.francis.mapapplication.map
 
+import android.app.Activity
+import android.content.Intent
+import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
+import android.location.*
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModelProvider
 import com.francis.mapapplication.R
 import com.francis.mapapplication.databinding.ActivityMapsBinding
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.material.snackbar.Snackbar
+import com.google.android.gms.maps.model.*
 
 /**
  * Maps activity. Display a map on the screen with a marker indication my partners location.
  */
-class MapsActivity : AppCompatActivity(),
-    OnMapReadyCallback,
-    GoogleMap.OnMarkerClickListener, LocationListener {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     //  Declare google map instance.
     private lateinit var map: GoogleMap
@@ -40,15 +36,27 @@ class MapsActivity : AppCompatActivity(),
         ViewModelProvider(this).get(MapViewModel::class.java)
     }
 
-    //Declare the location manager instance.
-    private lateinit var locationManager: LocationManager
-
     //Create Activity constants
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 101
-        private const val MIN_TIME = 1000L * 5
-        private const val MIN_DIST = 1f
+        private const val REQUEST_CHECK_SETTINGS = 102
     }
+
+    //Declare location callback instance.
+    private lateinit var locationCallback: LocationCallback
+
+    //Declare location request instance.
+    private lateinit var locationRequest: LocationRequest
+
+    //Set Location update state to check if location updates is registered.
+    private var locationUpdateState = false
+
+    //Declare fusedLocationClient instance
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    //Declare last location.
+    private lateinit var lastLocation: Location
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,8 +65,8 @@ class MapsActivity : AppCompatActivity(),
         binding = ActivityMapsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        //instantiate location manager.
-        locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
+        //Instantiate fuseLocationClient which handles location updates
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
@@ -72,17 +80,97 @@ class MapsActivity : AppCompatActivity(),
                 placeMarkerOnMap(latLng)
             }
         }
+
+        //Use location callback to get my device updated location based on set interval.
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(p0: LocationResult) {
+                super.onLocationResult(p0)
+                lastLocation = p0.lastLocation
+
+                //Send new location update to firebase.
+                viewModel.updateMyLocation(lastLocation.latitude, lastLocation.longitude)
+            }
+        }
+
+        //Create a location updates request
+        createLocationRequest()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CHECK_SETTINGS) {
+            if (resultCode == Activity.RESULT_OK) {
+                locationUpdateState = true
+                startLocationUpdates()
+            }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        //unregister location update request on activity pause
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+    public override fun onResume() {
+        super.onResume()
+        //if location update state not set, start new location update request.
+        if (!locationUpdateState) {
+            startLocationUpdates()
+        }
     }
 
     /**
-     * Request for location updates once map is available for use
+     * Create location update request to track changes in location in realtime.
      */
-    private fun requestLocationUpdates() {
+    private fun createLocationRequest() {
+        //Instantiate location request
+        locationRequest = LocationRequest()
+
+        //Set location request interval
+        locationRequest.interval = 1000 * 5
+        locationRequest.fastestInterval = 1000
+
+        //Set priority.
+        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+
+        //Create a location setting builder to ask user to turn on location setting on phone
+        //for real time location updates
+        val builder = LocationSettingsRequest.Builder()
+            .addLocationRequest(locationRequest)
+
+        val client = LocationServices.getSettingsClient(this)
+        val task = client.checkLocationSettings(builder.build())
+
+
+        task.addOnSuccessListener {
+            locationUpdateState = true
+            startLocationUpdates()
+        }
+        task.addOnFailureListener { e ->
+
+            if (e is ResolvableApiException) {
+                // Location settings are not satisfied, but this can be fixed
+                // by showing the user a dialog.
+                try {
+                    // Show the dialog by calling startResolutionForResult(),
+                    // and check the result in onActivityResult().
+                    e.startResolutionForResult(
+                        this@MapsActivity,
+                        REQUEST_CHECK_SETTINGS
+                    )
+                } catch (sendEx: IntentSender.SendIntentException) {
+                    // Ignore the error.
+                }
+            }
+        }
+    }
+
+    private fun startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(
                 this,
                 android.Manifest.permission.ACCESS_FINE_LOCATION
-            )
-            != PackageManager.PERMISSION_GRANTED
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
                 this,
@@ -91,31 +179,13 @@ class MapsActivity : AppCompatActivity(),
             )
             return
         }
-        map.isMyLocationEnabled = true //enable location on map.
 
-        //Check for enabled provider and set location request on the provider
-        //Provider can be GPS provider or Network provider.
-        when {
-            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) -> {
-                locationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER,
-                    MIN_TIME,
-                    MIN_DIST,
-                    this
-                )
-            }
-            locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> {
-                locationManager.requestLocationUpdates(
-                    LocationManager.NETWORK_PROVIDER,
-                    MIN_TIME,
-                    MIN_DIST,
-                    this
-                )
-            }
-            else -> {
-                Toast.makeText(this, "", Toast.LENGTH_LONG).show()
-            }
-        }
+        //Use google api fusedLocationClient to register location update request.
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            null /* Looper */
+        )
     }
 
     /**
@@ -129,37 +199,12 @@ class MapsActivity : AppCompatActivity(),
      */
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
+        val style = MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style)
+        map.setMapStyle(style)
         map.uiSettings.isZoomControlsEnabled = true
         map.setOnMarkerClickListener(this)
-        requestLocationUpdates()
+        setUpMap()
     }
-
-    /**
-     * Request location permission
-     */
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                requestLocationUpdates()
-            } else {
-                val snackbar = Snackbar.make(
-                    binding.root,
-                    "Permission is required",
-                    Snackbar.LENGTH_INDEFINITE
-                )
-                snackbar.setAction("Request") {
-                    requestLocationUpdates()
-                    snackbar.dismiss()
-                }.show()
-            }
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-    }
-
 
     override fun onMarkerClick(p0: Marker?): Boolean {
         return false
@@ -172,31 +217,45 @@ class MapsActivity : AppCompatActivity(),
     private fun placeMarkerOnMap(location: LatLng) {
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 15.0f))
         map.clear()
+
         val markerOptions = MarkerOptions().position(location)
+        markerOptions.title("Latitude: ${location.latitude}, Longitude: ${location.longitude}")
+
         markerOptions.icon(
             BitmapDescriptorFactory.fromBitmap(
-            BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_round)))
-        map.addMarker(markerOptions)
+                BitmapFactory.decodeResource(resources, R.mipmap.ic_marker_round)
+            )
+        )
+
+        val marker = map.addMarker(markerOptions)
+        marker.showInfoWindow()
     }
 
     /**
-     * @param location updated location coordinates
-     * Location listener callback that returns my current location.
+     * Setup and overlay map on the screen.
      */
-    override fun onLocationChanged(location: Location) {
-        //Get latitude and longitude from position.
-        val currentLatLng = LatLng(location.latitude, location.longitude)
+    private fun setUpMap() {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
+            return
+        }
 
-        //Send new coordinates to firebase.
-        viewModel.updateMyLocation(currentLatLng.latitude, currentLatLng.longitude)
+        //Set location enabled.
+        map.isMyLocationEnabled = true
+
+        fusedLocationClient.lastLocation.addOnSuccessListener(this) { location ->
+            // Got last known location. In some rare situations this can be null.
+            if (location != null) {
+                lastLocation = location
+            }
+        }
     }
-
-    /**
-     * On stop remove location updates listener.
-     */
-    override fun onStop() {
-        super.onStop()
-        locationManager.removeUpdates(this)
-    }
-
 }
