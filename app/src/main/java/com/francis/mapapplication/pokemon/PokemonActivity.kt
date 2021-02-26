@@ -77,6 +77,9 @@ class PokemonActivity : AppCompatActivity(), PokemonAdapter.ItemOnClickListener 
             }
         })
 
+        //Display loading indicator before making network call
+        showLoading()
+
         //Enable network listener to listener for changes in network states.
         //Like turning on and off network.
         registerNetworkListener()
@@ -84,11 +87,8 @@ class PokemonActivity : AppCompatActivity(), PokemonAdapter.ItemOnClickListener 
         //Set adapter to recycler view.
         binding.photosGrid.adapter = adapter
 
-        //Display loading indicator before making network call
-        showLoading()
-
         //Make network call to get pokemon properties.
-        getProperties(offset, limit)
+//        getProperties(offset, limit)
     }
 
     /**
@@ -215,7 +215,7 @@ class PokemonActivity : AppCompatActivity(), PokemonAdapter.ItemOnClickListener 
     }
 
     /**
-     * show network error inidcator
+     * show network error indicator
      */
     private fun showNetworkError() {
         binding.connectionError.visibility = View.VISIBLE
