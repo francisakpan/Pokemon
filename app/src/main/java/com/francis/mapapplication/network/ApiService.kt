@@ -1,4 +1,4 @@
-package com.francis.mapapplication.pokemon.network
+package com.francis.mapapplication.network
 
 import com.francis.mapapplication.model.PokemonData
 import com.francis.mapapplication.model.Property

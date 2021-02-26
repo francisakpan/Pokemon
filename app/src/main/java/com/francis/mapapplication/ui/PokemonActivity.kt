@@ -1,10 +1,8 @@
-package com.francis.mapapplication.pokemon
+package com.francis.mapapplication.ui
 
 import android.content.Context
 import android.content.Intent
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkRequest
+import android.net.*
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -21,8 +19,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.francis.mapapplication.R
 import com.francis.mapapplication.databinding.ActivityPokemonBinding
 import com.francis.mapapplication.model.Property
-import com.francis.mapapplication.pokemon.adapter.PokemonAdapter
-import com.francis.mapapplication.pokemon.network.PokemonApi
+import com.francis.mapapplication.adapter.PokemonAdapter
+import com.francis.mapapplication.network.PokemonApi
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observer
 import io.reactivex.rxjava3.disposables.Disposable
@@ -53,6 +51,7 @@ class PokemonActivity : AppCompatActivity(), PokemonAdapter.ItemOnClickListener 
     //Declare connectivity network callback
     private lateinit var networkCallback: ConnectivityManager.NetworkCallback
 
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityPokemonBinding.inflate(layoutInflater)
@@ -77,8 +76,7 @@ class PokemonActivity : AppCompatActivity(), PokemonAdapter.ItemOnClickListener 
             }
         })
 
-        //Display loading indicator before making network call
-        showLoading()
+        showNetworkError()
 
         //Enable network listener to listener for changes in network states.
         //Like turning on and off network.
@@ -86,10 +84,9 @@ class PokemonActivity : AppCompatActivity(), PokemonAdapter.ItemOnClickListener 
 
         //Set adapter to recycler view.
         binding.photosGrid.adapter = adapter
-
-        //Make network call to get pokemon properties.
-//        getProperties(offset, limit)
     }
+
+    private fun showToast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
 
     /**
      * Register network listener to listen to changes in network states.

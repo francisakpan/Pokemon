@@ -1,4 +1,4 @@
-package com.francis.mapapplication.pokemon
+package com.francis.mapapplication.ui
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -20,9 +20,9 @@ import com.bumptech.glide.request.RequestOptions
 import com.francis.mapapplication.R
 import com.francis.mapapplication.databinding.ActivityDetailsBinding
 import com.francis.mapapplication.model.*
-import com.francis.mapapplication.pokemon.adapter.PokemonDetailsAdapter
-import com.francis.mapapplication.pokemon.adapter.PokemonImagesAdapter
-import com.francis.mapapplication.pokemon.network.PokemonApi
+import com.francis.mapapplication.adapter.PokemonDetailsAdapter
+import com.francis.mapapplication.adapter.PokemonImagesAdapter
+import com.francis.mapapplication.network.PokemonApi
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observer
 import io.reactivex.rxjava3.disposables.Disposable

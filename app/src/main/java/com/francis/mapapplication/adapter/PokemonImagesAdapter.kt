@@ -1,4 +1,4 @@
-package com.francis.mapapplication.pokemon.adapter
+package com.francis.mapapplication.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
